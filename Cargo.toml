@@ -1,5 +1,5 @@
 [package]
-name = "BluetoothPGP"
+name = "pokemon_pro_pi"
 version = "0.1.0"
 authors = ["André Diogo <redan.blue27@gmail.com>"]
 edition = "2018"
@@ -7,9 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-blurz = "0.4.0"
 aes = "0.3.2"
+arrayref = "0.3.5"
 block-modes = "0.3.3"
+blurz = "0.4.0"
 rand = "0.7.2"
 serde = { version = "1.0.103", features = ["derive"] }
 serde_json = "1.0"

@@ -15,5 +15,5 @@ If (-Not (docker images | Select-String "ragnaroek/rust-raspberry(\s+)$version" 
 docker run `
     -v D:\Andre\Documents\RaspberryPi\BluetoothPGP:/home/cross/project `
     -v D:\Andre\Documents\RaspberryPi\BluetoothPGP\deb-deps:/home/cross/deb-deps `
-    -v C:\Users\Andre\.cargo\registry:/home/cross/.cargo/registry ragnaroek/rust-raspberry:1.39.0 `
+    -v C:\Users\Andre\.cargo\registry:/home/cross/.cargo/registry ragnaroek/rust-raspberry:$version `
     $command
