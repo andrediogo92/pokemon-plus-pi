@@ -1,4 +1,4 @@
-# Pokemon Go Pro on Rust #
+# Pokemon Go+ on Rust #
 
 ## Custom AES & Challenges ##
 
