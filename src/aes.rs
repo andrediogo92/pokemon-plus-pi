@@ -2,14 +2,14 @@ extern crate aes;
 extern crate block_modes;
 
 use std::num::Wrapping;
-use std::mem::MaybeUninit;
+use std::convert::TryInto;
 
 use aes::Aes128;
+use aes::block_cipher_trait::BlockCipher;
+use self::aes::block_cipher_trait::generic_array::GenericArray;
 use block_modes::{BlockMode, Ecb};
 use block_modes::block_padding::ZeroPadding;
-use aes::block_cipher_trait::BlockCipher;
-use std::convert::TryInto;
-use self::aes::block_cipher_trait::generic_array::GenericArray;
+use arrayvec::{ArrayVec};
 
 pub struct AESContext {
     ecb: Ecb<Aes128, ZeroPadding>,
@@ -54,9 +54,9 @@ fn inc_ctr(ctr: &mut [u8; 16]) {
     }
 }
 
-pub fn aes_ctr(context: &AESContext, nonce: &[u8; 16], data: &[u8]) -> Vec<u8> {
+pub fn aes_ctr(context: &AESContext, nonce: &[u8; 16], data: &[u8]) -> ArrayVec<[u8; 80]> {
     let count = data.len();
-    let mut output: Vec<u8> = Vec::with_capacity(count);
+    let mut output: ArrayVec<[u8; 80]> = ArrayVec::<[u8; 80]>::new();
 
     let mut ctr = init_nonce_counter(nonce);
     let blocks = count / 16;
@@ -67,7 +67,7 @@ pub fn aes_ctr(context: &AESContext, nonce: &[u8; 16], data: &[u8]) -> Vec<u8> {
         let ectr = &mut aes_encrypt(context, copy);
 
         for j in 0..16 {
-            output[j + i * 16] = ectr[j] ^ data[j + i * 16];
+            output.push(ectr[j] ^ data[j + i * 16]);
         }
     }
 
@@ -93,8 +93,8 @@ pub fn aes_hash(context: &AESContext, nonce: &[u8; 16], data: &[u8]) -> [u8; 16]
 
     let blocks = count / 16;
     for i in 0..blocks {
-        for j in 0..16 {
-            output[j] ^= data[j + i * 16]
+        for (j, byte) in output.iter_mut().enumerate() {
+            *byte ^= data[j + i * 16]
         }
         output = aes_encrypt(context, &mut output);
     }
@@ -103,16 +103,13 @@ pub fn aes_hash(context: &AESContext, nonce: &[u8; 16], data: &[u8]) -> [u8; 16]
 
 
 pub fn encrypt_block(context: &AESContext, nonce_iv: &[u8; 16], nonce: &[u8; 16]) -> [u8; 16] {
-    let mut output: MaybeUninit<[u8; 16]> = MaybeUninit::uninit();
     let mut nonce_ctr: [u8; 16] = init_nonce_counter(nonce);
     let tmp = aes_encrypt(context, &mut nonce_ctr);
 
-    for i in 0..16 {
-        unsafe {
-            let output = output.as_mut_ptr() as *mut u8;
-            output.add(i).write(tmp[i] ^ nonce_iv[i]);
-        };
+    let mut output: [u8; 16] = [0; 16];
+    for (i, byte) in output.iter_mut().enumerate() {
+        *byte = tmp[i] ^ nonce_iv[i];
     }
 
-    return unsafe { output.assume_init() };
+    return output;
 }

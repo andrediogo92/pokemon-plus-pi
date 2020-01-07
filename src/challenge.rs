@@ -62,7 +62,7 @@ impl From<MainChallengeData> for [u8; 80] {
             offset = write_by_param(offset, &m.nonce, u_buf);
             offset = write_by_param(offset, &m.encrypted_challenge, u_buf);
             offset = write_by_param(offset, &m.encrypted_hash, u_buf);
-            offset = write_by_param(offset, &m.flash_data, u_buf);
+            write_by_param(offset, &m.flash_data, u_buf);
             return buf.assume_init();
         }
     }
@@ -77,7 +77,7 @@ impl From<NextChallenge> for [u8; 52] {
             offset = write_by_param(offset, &n.state, u_buf);
             offset = write_by_param(offset, &n.nonce, u_buf);
             offset = write_by_param(offset, &n.encrypted_challenge, u_buf);
-            offset = write_by_param(offset, &n.encrypted_hash, u_buf);
+            write_by_param(offset, &n.encrypted_hash, u_buf);
             return buf.assume_init();
         }
     }
@@ -91,7 +91,7 @@ impl From<NextChallenge> for [u8; 48] {
             let mut offset = 0;
             offset = write_by_param(offset, &n.nonce, u_buf);
             offset = write_by_param(offset, &n.encrypted_challenge, u_buf);
-            offset = write_by_param(offset, &n.encrypted_hash, u_buf);
+            write_by_param(offset, &n.encrypted_hash, u_buf);
             return buf.assume_init();
         }
     }
@@ -173,7 +173,7 @@ fn generate_chal_0(
 
         let tmp_hash = aes_hash(&context, main_nonce, the_challenge);
         let slice = aes_ctr(&context, main_nonce, the_challenge);
-        let encrypted_challenge: [u8; 16] = <[u8; 16]>::try_from(slice.as_slice())
+        let encrypted_challenge: [u8; 16] = <[u8; 16]>::try_from(slice.as_ref())
             .expect(
                 format!(
                     "Encrypted Challenge should be same size as challenge: {}",
@@ -200,7 +200,7 @@ fn generate_chal_0(
 
         let tmp_hash = aes_hash(&context, &outer_nonce, &main_data);
         let slice = aes_ctr(&context, &outer_nonce, &main_data);
-        let encrypted_main_challenge = <[u8; 80]>::convert(slice.as_slice());
+        let encrypted_main_challenge = <[u8; 80]>::convert(slice.as_ref());
 
         let encrypted_hash = encrypt_block(&context, &tmp_hash, &outer_nonce);
         return ChallengeData {
@@ -227,7 +227,7 @@ fn generate_next_chal(data: Option<&[u8]>, key: &[u8], nonce: &[u8; 16]) -> Next
     };
 
     let slice = aes_ctr(&context, nonce, &data);
-    let encrypted_challenge = <[u8; 16]>::try_from(slice.as_slice()).unwrap();
+    let encrypted_challenge = <[u8; 16]>::try_from(slice.as_ref()).unwrap();
 
     let inter_hash = aes_hash(&context, nonce, &data);
     let encrypted_hash = encrypt_block(&context, &inter_hash, nonce);
@@ -243,7 +243,7 @@ fn generate_next_chal(data: Option<&[u8]>, key: &[u8], nonce: &[u8; 16]) -> Next
 fn decrypt_next(key: &[u8], challenge: &NextChallenge) -> (bool, [u8; 16]) {
     let context: AESContext = aes_init(key);
     let slice = aes_ctr(&context, &challenge.nonce, &challenge.encrypted_challenge);
-    let output = <[u8; 16]>::try_from(slice.as_slice()).unwrap();
+    let output = <[u8; 16]>::try_from(slice.as_ref()).unwrap();
     let enc_nonce = encrypt_block(&context, &challenge.encrypted_hash, &challenge.nonce);
     let hash = aes_hash(&context, &challenge.nonce, &output);
     return (hash == enc_nonce, output);
